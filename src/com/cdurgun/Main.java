@@ -48,7 +48,7 @@ public class Main {
                 case 3 -> displayAllUserBookedCars(userService, carBookingService, scanner);
                 case 4 -> displayAllBookings(carBookingService);
                 case 5 -> displayAllAvailableCars(carService, carBookingService, false);
-                case 6 -> displayAllAvailableCars(carService, carBookingService,true);
+                case 6 -> displayAllAvailableCars(carService, carBookingService, true);
                 case 7 -> displayUsers(userService);
                 case 8 -> System.out.println("Goodbye!");
                 default -> System.out.println("Invalid Option !!!");
@@ -80,7 +80,7 @@ public class Main {
         System.out.print("Enter User Id : ");
         String userId = scanner.nextLine();
         try {
-            if(!userService.userExists(UUID.fromString(userId))) {
+            if (!userService.userExists(UUID.fromString(userId))) {
                 System.out.println("User not found");
                 return;
             }
@@ -89,8 +89,8 @@ public class Main {
             return;
         }
 
-        for(CarBooking carBooking:carBookingService.getAllCarBookings()) {
-            if(carBooking!=null && carBooking.getUser().getId().equals(UUID.fromString(userId))
+        for (CarBooking carBooking : carBookingService.getAllCarBookings()) {
+            if (carBooking != null && carBooking.getUser().getId().equals(UUID.fromString(userId))
                 && carBooking.getStatus().equals(BookingStatus.ACTIVE)) {
                 isBooked = true;
                 System.out.println(carBooking.getCar() + " is booked by " + carBooking.getUser());
@@ -105,8 +105,8 @@ public class Main {
 
     private static boolean displayAllBookings(CarBookingService carBookingService) {
         boolean isBooked = false;
-        for(CarBooking carBooking:carBookingService.getAllCarBookings()) {
-            if(carBooking!=null && carBooking.getStatus().equals(BookingStatus.ACTIVE))  {
+        for (CarBooking carBooking : carBookingService.getAllCarBookings()) {
+            if (carBooking != null && carBooking.getStatus().equals(BookingStatus.ACTIVE)) {
                 isBooked = true;
                 System.out.println("Booking :" + carBooking);
             }
@@ -119,18 +119,18 @@ public class Main {
     }
 
     private static boolean displayAllAvailableCars(CarService carService, CarBookingService carBookingService,
-                                           boolean isElectricCar) {
+                                                   boolean isElectricCar) {
         boolean existAvailableCar = false;
         System.out.println("                               Car List                                           ");
         System.out.println("----------------------------------------------------------------------------------");
-        for(Car car: carService.getAllCars()) {
+        for (Car car : carService.getAllCars()) {
             if (isElectricCar) {
-                if(!carBookingService.carBooked(car.getRegNumber()) && car.isElectric()) {
+                if (!carBookingService.isCarBooked(car.getRegNumber()) && car.isElectric()) {
                     existAvailableCar = true;
                     System.out.println(car);
                 }
             } else {
-                if(!carBookingService.carBooked(car.getRegNumber())) {
+                if (!carBookingService.isCarBooked(car.getRegNumber())) {
                     existAvailableCar = true;
                     System.out.println(car);
                 }
@@ -145,23 +145,23 @@ public class Main {
 
 
     private static void displayCarBookingAndSave(UserService userService, CarService carService,
-                                          CarBookingService carBookingService, Scanner scanner) {
+                                                 CarBookingService carBookingService, Scanner scanner) {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
-        while(true) {
-            boolean carExists=displayAllAvailableCars(carService, carBookingService,false);
-            if(!carExists) {
+        while (true) {
+            boolean carExists = displayAllAvailableCars(carService, carBookingService, false);
+            if (!carExists) {
                 break;
             }
             System.out.println("Select car reg number ");
             String regNumber = scanner.nextLine();
             Car car = carService.getCarByRegNumber(regNumber);
-            if(car == null) {
+            if (car == null) {
                 System.out.println("Car not found");
                 break;
             }
 
-            if(carBookingService.carBooked(regNumber)) {
+            if (carBookingService.isCarBooked(regNumber)) {
                 System.out.println("This car has already been booked !!!");
                 break;
             }
@@ -172,7 +172,7 @@ public class Main {
             System.out.println("Select user id ");
             String userId = scanner.nextLine();
             try {
-                if(!userService.userExists(UUID.fromString(userId))) {
+                if (!userService.userExists(UUID.fromString(userId))) {
                     System.out.println("User not found");
                     break;
                 }
@@ -189,7 +189,7 @@ public class Main {
                     startDateStr = scanner.nextLine();
                     startDate = LocalDate.parse(startDateStr, dateTimeFormatter);
 
-                    if(startDate.isBefore(LocalDate.now())) {
+                    if (startDate.isBefore(LocalDate.now())) {
                         System.out.println("Start date must not be in the past !!!");
                         continue;
                     }
@@ -206,7 +206,7 @@ public class Main {
                     System.out.println("Select end date(dd-mm-yyyy)");
                     endDateStr = scanner.nextLine();
                     endDate = LocalDate.parse(endDateStr, dateTimeFormatter);
-                    if(endDate.isBefore(startDate)) {
+                    if (endDate.isBefore(startDate)) {
                         System.out.println("End date must be after startDate !!!");
                         continue;
                     }
@@ -218,7 +218,7 @@ public class Main {
 
             System.out.println("Would you like to save this booking (Y/N)");
             String saveBooking = scanner.nextLine();
-            if(saveBooking.equalsIgnoreCase("Y")) {
+            if (saveBooking.equalsIgnoreCase("Y")) {
                 CarBooking carBooking = carBookingService.bookCar(UUID.fromString(userId), carId, startDate, endDate);
                 if (carBooking != null) {
                     System.out.println("Car booked :" + carBooking);
@@ -229,7 +229,7 @@ public class Main {
     }
 
     private static void deleteCarBooking(CarBookingService carBookingService, Scanner scanner) {
-        boolean existBookings =displayAllBookings(carBookingService);
+        boolean existBookings = displayAllBookings(carBookingService);
         if (!existBookings) return;
         System.out.println("Enter booking id");
         String bookingId = scanner.nextLine();
@@ -241,7 +241,7 @@ public class Main {
             return;
         }
 
-        if (carBooking != null ) {
+        if (carBooking != null) {
             carBookingService.deleteCarBooking(carBooking);
             System.out.println("Deleted:" + carBooking);
         } else {
@@ -252,8 +252,8 @@ public class Main {
     private static void displayUsers(UserService userService) {
         System.out.println("                       User List                                ");
         System.out.println("----------------------------------------------------------------");
-        User[]  users = userService.getUsers();
-        for (User user: users) {
+        User[] users = userService.getUsers();
+        for (User user : users) {
             System.out.println(user);
         }
         System.out.println("----------------------------------------------------------------");

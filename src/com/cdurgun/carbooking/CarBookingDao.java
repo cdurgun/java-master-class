@@ -6,7 +6,7 @@ import java.util.UUID;
 public class CarBookingDao {
     private static CarBooking[] bookings;
     private static int capacity = 2;
-    private static final int capacityIncrement = 1;
+    private static final int capacityMultiplier = 2;
     private static int carIndex;
 
     static {
@@ -14,9 +14,9 @@ public class CarBookingDao {
         carIndex = 0;
     }
 
-    public void save(CarBooking carBooking)  {
-        if (carIndex >=  capacity) {
-            capacity += capacityIncrement;
+    public void save(CarBooking carBooking) {
+        if (carIndex >= capacity) {
+            capacity *= capacityMultiplier;
             bookings = Arrays.copyOf(bookings, capacity);
         }
         bookings[carIndex++] = carBooking;
@@ -27,14 +27,18 @@ public class CarBookingDao {
     }
 
     public CarBooking findById(UUID bookingId) {
-        for(CarBooking carBooking: bookings) {
-            if(carBooking.getId().equals(bookingId))
-                return carBooking;
+        for (int i = 0; i < carIndex; i++) {
+            if (bookings[i].getId().equals(bookingId)) {
+                return bookings[i];
+            }
         }
         return null;
     }
 
-    public void delete(CarBooking carBooking) {
-        carBooking.setStatus(BookingStatus.CANCELLED);
+    public void delete(UUID id) {
+        CarBooking carBooking = findById(id);
+        if (carBooking != null) {
+            carBooking.setStatus(BookingStatus.CANCELLED);
+        }
     }
 }

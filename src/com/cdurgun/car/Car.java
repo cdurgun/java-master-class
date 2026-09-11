@@ -5,7 +5,6 @@ import java.util.Objects;
 import java.util.UUID;
 
 
-
 public class Car {
     private UUID id;
     private String regNumber;

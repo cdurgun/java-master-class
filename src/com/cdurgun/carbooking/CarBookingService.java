@@ -23,13 +23,13 @@ public class CarBookingService {
         this.carService = carService;
     }
 
-    public CarBooking [] getAllCarBookings() {
+    public CarBooking[] getAllCarBookings() {
         return carBookingDao.findAll();
     }
 
-    public boolean carBooked(String regNumber) {
-        for(CarBooking carBooking:this.getAllCarBookings()) {
-            if(carBooking!=null && carBooking.getCar().getRegNumber().equals(regNumber)
+    public boolean isCarBooked(String regNumber) {
+        for (CarBooking carBooking : this.getAllCarBookings()) {
+            if (carBooking != null && carBooking.getCar().getRegNumber().equals(regNumber)
                 && carBooking.getStatus().equals(BookingStatus.ACTIVE)) {
                 return true;
             }
@@ -45,22 +45,21 @@ public class CarBookingService {
         Car car = carService.getCarByID(carId);
         User user = userService.getUserById(userId);
         long numberOfDays = ChronoUnit.DAYS.between(startDate, endDate);
-        if(startDate.isEqual(endDate)) {
+        if (startDate.isEqual(endDate)) {
             numberOfDays = 1;
         }
 
-        BigDecimal rentPrice =  car.getRentalPricePerDay().multiply(BigDecimal.valueOf(numberOfDays));
+        BigDecimal rentPrice = car.getRentalPricePerDay().multiply(BigDecimal.valueOf(numberOfDays));
         CarBooking carBooking = new CarBooking(UUID.randomUUID(),
-                                              user, car, startDate,
-                                              endDate, rentPrice, BookingStatus.ACTIVE, LocalDate.now());
+            user, car, startDate,
+            endDate, rentPrice, BookingStatus.ACTIVE, LocalDate.now());
 
         carBookingDao.save(carBooking);
         return carBooking;
     }
 
-
     public void deleteCarBooking(CarBooking carBooking) {
-        carBookingDao.delete(carBooking);
+        carBookingDao.delete(carBooking.getId());
     }
 
 }
