@@ -3,12 +3,13 @@ package com.cdurgun.carbooking;
 import com.cdurgun.car.Car;
 import com.cdurgun.user.User;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
 
-public class CarBooking {
+public class CarBooking implements Serializable {
     private UUID id;
     private User user;
     private Car car;

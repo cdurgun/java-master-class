@@ -41,7 +41,7 @@ public class CarBookingService {
         return carBookingDao.findById(bookingId);
     }
 
-    public CarBooking bookCar(UUID userId, UUID carId, LocalDate startDate, LocalDate endDate) {
+    public CarBooking bookCar(UUID userId, UUID carId, LocalDate startDate, LocalDate endDate) throws RuntimeException {
         Car car = carService.getCarByID(carId);
         User user = userService.getUserById(userId);
         long numberOfDays = ChronoUnit.DAYS.between(startDate, endDate);
@@ -58,7 +58,7 @@ public class CarBookingService {
         return carBooking;
     }
 
-    public void deleteCarBooking(CarBooking carBooking) {
+    public void deleteCarBooking(CarBooking carBooking) throws RuntimeException {
         carBookingDao.delete(carBooking.getId());
     }
 

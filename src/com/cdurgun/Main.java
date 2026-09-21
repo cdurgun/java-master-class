@@ -1,16 +1,18 @@
 package com.cdurgun;
 
 import com.cdurgun.car.Car;
+import com.cdurgun.car.CarArrayDataAccessService;
 import com.cdurgun.car.CarDao;
 import com.cdurgun.car.CarService;
-import com.cdurgun.carbooking.BookingStatus;
-import com.cdurgun.carbooking.CarBooking;
-import com.cdurgun.carbooking.CarBookingDao;
-import com.cdurgun.carbooking.CarBookingService;
+import com.cdurgun.carbooking.*;
 import com.cdurgun.user.User;
+import com.cdurgun.user.UserArrayDataAccessService;
 import com.cdurgun.user.UserDao;
 import com.cdurgun.user.UserService;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
@@ -19,40 +21,67 @@ import java.util.UUID;
 public class Main {
 
     static void main(String[] args) {
-        int option = 0;
 
-        UserDao userDao = new UserDao();
+        UserDao userDao = new UserArrayDataAccessService();
         UserService userService = new UserService(userDao);
-        CarDao carDao = new CarDao();
+        CarDao carDao = new CarArrayDataAccessService();
         CarService carService = new CarService(carDao);
-        CarBookingDao carBookingDao = new CarBookingDao();
+        CarBookingDao carBookingDao = null;
+
+        int implOption = 2;
+        switch (implOption) {
+            case 1 -> {
+                carBookingDao = new CarBookingArrayDataAccessService();
+            }
+            case 2 -> {
+                try {
+                    String filePath = "bookings.dat";
+                    // Depending on the argument, the file can be deleted at the start of each session.
+                    if (args.length > 0 && args[0].equalsIgnoreCase("delete")) {
+                        Files.deleteIfExists(Path.of(filePath));
+                    }
+                    carBookingDao = new CarBookingFileDataAccessService(filePath);
+                } catch (RuntimeException | IOException e) {
+                    System.out.println("An error occurred while initializing the booking data:" + e.getMessage());
+                    return;
+                }
+            }
+        }
+
         CarBookingService carBookingService = new CarBookingService(carBookingDao, userService, carService);
+        processMenuOption(userService, carService, carBookingService);
+    }
 
+    private static void processMenuOption(UserService userService, CarService carService, CarBookingService carBookingService) {
+        int option = 0;
         Scanner scanner = new Scanner(System.in);
-        while (option != 8) {
-            showMenu();
-
-            try {
-                option = scanner.nextInt();
-            } catch (Exception e) {
-                System.out.println("Invalid Option !!!");
+        try {
+            while (option != 8) {
+                showMenu();
+                try {
+                    option = scanner.nextInt();
+                } catch (Exception e) {
+                    System.out.println("Invalid Option !!!");
+                    scanner.nextLine();
+                    continue;
+                }
                 scanner.nextLine();
-                continue;
-            }
 
-            scanner.nextLine();
+                switch (option) {
+                    case 1 -> displayCarBookingAndSave(userService, carService, carBookingService, scanner);
+                    case 2 -> deleteCarBooking(carBookingService, scanner);
+                    case 3 -> displayAllUserBookedCars(userService, carBookingService, scanner);
+                    case 4 -> displayAllBookings(carBookingService);
+                    case 5 -> displayAllAvailableCars(carService, carBookingService, false);
+                    case 6 -> displayAllAvailableCars(carService, carBookingService, true);
+                    case 7 -> displayUsers(userService);
+                    case 8 -> System.out.println("Goodbye!");
+                    default -> System.out.println("Invalid Option !!!");
+                }
 
-            switch (option) {
-                case 1 -> displayCarBookingAndSave(userService, carService, carBookingService, scanner);
-                case 2 -> deleteCarBooking(carBookingService, scanner);
-                case 3 -> displayAllUserBookedCars(userService, carBookingService, scanner);
-                case 4 -> displayAllBookings(carBookingService);
-                case 5 -> displayAllAvailableCars(carService, carBookingService, false);
-                case 6 -> displayAllAvailableCars(carService, carBookingService, true);
-                case 7 -> displayUsers(userService);
-                case 8 -> System.out.println("Goodbye!");
-                default -> System.out.println("Invalid Option !!!");
             }
+        } catch (RuntimeException e) {
+            System.out.println("An error occurred  :" + e.getMessage());
         }
         scanner.close();
     }
@@ -73,8 +102,7 @@ public class Main {
         System.out.println("|     Select an option ....?          |");
     }
 
-    private static void displayAllUserBookedCars(UserService userService, CarBookingService carBookingService,
-                                                 Scanner scanner) {
+    private static void displayAllUserBookedCars(UserService userService, CarBookingService carBookingService, Scanner scanner) throws RuntimeException {
         boolean isBooked = false;
         displayUsers(userService);
         System.out.print("Enter User Id : ");
@@ -90,20 +118,20 @@ public class Main {
         }
 
         for (CarBooking carBooking : carBookingService.getAllCarBookings()) {
-            if (carBooking != null && carBooking.getUser().getId().equals(UUID.fromString(userId))
-                && carBooking.getStatus().equals(BookingStatus.ACTIVE)) {
+            if (carBooking != null && carBooking.getUser().getId().equals(
+                UUID.fromString(userId)) && carBooking.getStatus().equals(BookingStatus.ACTIVE)) {
                 isBooked = true;
                 System.out.println(carBooking.getCar() + " is booked by " + carBooking.getUser());
             }
         }
         if (!isBooked) {
-            System.out.println("No booking");
+            System.out.println("No bookings");
         }
         System.out.println();
 
     }
 
-    private static boolean displayAllBookings(CarBookingService carBookingService) {
+    private static boolean displayAllBookings(CarBookingService carBookingService) throws RuntimeException {
         boolean isBooked = false;
         for (CarBooking carBooking : carBookingService.getAllCarBookings()) {
             if (carBooking != null && carBooking.getStatus().equals(BookingStatus.ACTIVE)) {
@@ -112,14 +140,13 @@ public class Main {
             }
         }
         if (!isBooked) {
-            System.out.println("No booking");
+            System.out.println("No bookings");
         }
         System.out.println();
         return isBooked;
     }
 
-    private static boolean displayAllAvailableCars(CarService carService, CarBookingService carBookingService,
-                                                   boolean isElectricCar) {
+    private static boolean displayAllAvailableCars(CarService carService, CarBookingService carBookingService, boolean isElectricCar) throws RuntimeException {
         boolean existAvailableCar = false;
         System.out.println("                               Car List                                           ");
         System.out.println("----------------------------------------------------------------------------------");
@@ -137,15 +164,14 @@ public class Main {
             }
         }
         if (!existAvailableCar) {
-            System.out.println("No available car !!!");
+            System.out.println("No cars available for booking !!!");
         }
         System.out.println("----------------------------------------------------------------------------------");
         return existAvailableCar;
     }
 
 
-    private static void displayCarBookingAndSave(UserService userService, CarService carService,
-                                                 CarBookingService carBookingService, Scanner scanner) {
+    private static void displayCarBookingAndSave(UserService userService, CarService carService, CarBookingService carBookingService, Scanner scanner) throws RuntimeException {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
         while (true) {
@@ -219,16 +245,22 @@ public class Main {
             System.out.println("Would you like to save this booking (Y/N)");
             String saveBooking = scanner.nextLine();
             if (saveBooking.equalsIgnoreCase("Y")) {
-                CarBooking carBooking = carBookingService.bookCar(UUID.fromString(userId), carId, startDate, endDate);
+                CarBooking carBooking;
+                try {
+                    carBooking = carBookingService.bookCar(UUID.fromString(userId), carId, startDate, endDate);
+                } catch (RuntimeException e) {
+                    System.out.println("Car booking failed :" + e.getMessage());
+                    carBooking = null;
+                }
                 if (carBooking != null) {
-                    System.out.println("Car booked :" + carBooking);
+                    System.out.println("Car booked successfully :" + carBooking);
                 }
             }
             break;
         }
     }
 
-    private static void deleteCarBooking(CarBookingService carBookingService, Scanner scanner) {
+    private static void deleteCarBooking(CarBookingService carBookingService, Scanner scanner) throws RuntimeException {
         boolean existBookings = displayAllBookings(carBookingService);
         if (!existBookings) return;
         System.out.println("Enter booking id");
