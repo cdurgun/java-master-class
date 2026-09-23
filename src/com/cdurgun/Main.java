@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -26,26 +27,18 @@ public class Main {
         UserService userService = new UserService(userDao);
         CarDao carDao = new CarArrayDataAccessService();
         CarService carService = new CarService(carDao);
-        CarBookingDao carBookingDao = null;
-
-        int implOption = 2;
-        switch (implOption) {
-            case 1 -> {
-                carBookingDao = new CarBookingArrayDataAccessService();
+        //CarBookingDao carBookingDao = new CarBookingArrayDataAccessService();
+        CarBookingDao carBookingDao;
+        try {
+            String filePath = "bookings.dat";
+            // Depending on the argument, the file can be deleted at the start of each session.
+            if (args.length > 0 && args[0].equalsIgnoreCase("delete")) {
+                Files.deleteIfExists(Path.of(filePath));
             }
-            case 2 -> {
-                try {
-                    String filePath = "bookings.dat";
-                    // Depending on the argument, the file can be deleted at the start of each session.
-                    if (args.length > 0 && args[0].equalsIgnoreCase("delete")) {
-                        Files.deleteIfExists(Path.of(filePath));
-                    }
-                    carBookingDao = new CarBookingFileDataAccessService(filePath);
-                } catch (RuntimeException | IOException e) {
-                    System.out.println("An error occurred while initializing the booking data:" + e.getMessage());
-                    return;
-                }
-            }
+            carBookingDao = new CarBookingFileDataAccessService(filePath);
+        } catch (RuntimeException | IOException e) {
+            System.out.println("An error occurred while initializing the booking data:" + e.getMessage());
+            return;
         }
 
         CarBookingService carBookingService = new CarBookingService(carBookingDao, userService, carService);
@@ -55,16 +48,10 @@ public class Main {
     private static void processMenuOption(UserService userService, CarService carService, CarBookingService carBookingService) {
         int option = 0;
         Scanner scanner = new Scanner(System.in);
-        try {
-            while (option != 8) {
-                showMenu();
-                try {
-                    option = scanner.nextInt();
-                } catch (Exception e) {
-                    System.out.println("Invalid Option !!!");
-                    scanner.nextLine();
-                    continue;
-                }
+        while (option != 8) {
+            showMenu();
+            try {
+                option = scanner.nextInt();
                 scanner.nextLine();
 
                 switch (option) {
@@ -78,14 +65,15 @@ public class Main {
                     case 8 -> System.out.println("Goodbye!");
                     default -> System.out.println("Invalid Option !!!");
                 }
-
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid Option !!!");
+                scanner.nextLine();
+            } catch (RuntimeException e) {
+                System.out.println("An error occurred  :" + e.getMessage());
             }
-        } catch (RuntimeException e) {
-            System.out.println("An error occurred  :" + e.getMessage());
         }
         scanner.close();
     }
-
 
     private static void showMenu() {
         System.out.println("       Car Booking CLI System         ");

@@ -8,18 +8,15 @@ import java.util.UUID;
 
 public class CarBookingFileDataAccessService implements CarBookingDao {
     private final String filePath;
-    private static CarBooking[] bookings;
-    private static int capacity = 2;
-    private static final int capacityMultiplier = 2;
-    private static int carIndex;
-
-    static {
-        bookings = new CarBooking[capacity];
-        carIndex = 0;
-    }
+    private CarBooking[] bookings;
+    private int capacity = 2;
+    private int carIndex;
+    private final static int capacityMultiplier = 2;
 
     public CarBookingFileDataAccessService(String filePath) throws IOException {
         this.filePath = filePath;
+        this.bookings = new CarBooking[capacity];
+        this.carIndex = 0;
         initializeBookings(filePath);
     }
 
@@ -62,7 +59,7 @@ public class CarBookingFileDataAccessService implements CarBookingDao {
 
     @Override
     public CarBooking[] findAll() {
-        return bookings;
+        return Arrays.copyOf(bookings, carIndex);
     }
 
     @Override
@@ -79,7 +76,7 @@ public class CarBookingFileDataAccessService implements CarBookingDao {
         bookings[carIndex++] = carBooking;
     }
 
-    private static void writeBookings(ObjectOutputStream out) throws IOException {
+    private void writeBookings(ObjectOutputStream out) throws IOException {
         for (int i = 0; i < carIndex; i++) {
             out.writeObject(bookings[i]);
         }
