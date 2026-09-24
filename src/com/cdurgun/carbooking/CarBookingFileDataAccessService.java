@@ -3,20 +3,17 @@ package com.cdurgun.carbooking;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class CarBookingFileDataAccessService implements CarBookingDao {
     private final String filePath;
-    private CarBooking[] bookings;
-    private int capacity = 2;
-    private int carIndex;
-    private final static int capacityMultiplier = 2;
+    private final List<CarBooking> bookings;
 
     public CarBookingFileDataAccessService(String filePath) throws IOException {
         this.filePath = filePath;
-        this.bookings = new CarBooking[capacity];
-        this.carIndex = 0;
+        this.bookings = new ArrayList<>();
         initializeBookings(filePath);
     }
 
@@ -34,8 +31,7 @@ public class CarBookingFileDataAccessService implements CarBookingDao {
                 while (true) {
                     try {
                         CarBooking booking = (CarBooking) in.readObject();
-                        increaseCapacity();
-                        bookings[carIndex++] = booking;
+                        bookings.add(booking);
                     } catch (EOFException e) {
                         break;
                     } catch (ClassNotFoundException e) {
@@ -49,17 +45,17 @@ public class CarBookingFileDataAccessService implements CarBookingDao {
 
     @Override
     public CarBooking findById(UUID bookingId) {
-        for (int i = 0; i < carIndex; i++) {
-            if (bookings[i].getId().equals(bookingId)) {
-                return bookings[i];
+        for (int i = 0; i < bookings.size(); i++) {
+            if (bookings.get(i).getId().equals(bookingId)) {
+                return bookings.get(i);
             }
         }
         return null;
     }
 
     @Override
-    public CarBooking[] findAll() {
-        return Arrays.copyOf(bookings, carIndex);
+    public List<CarBooking> findAll() {
+        return bookings;
     }
 
     @Override
@@ -72,20 +68,19 @@ public class CarBookingFileDataAccessService implements CarBookingDao {
         } catch (IOException e) {
             throw new RuntimeException("Could not save car booking.", e);
         }
-        increaseCapacity();
-        bookings[carIndex++] = carBooking;
+        bookings.add(carBooking);
     }
 
     private void writeBookings(ObjectOutputStream out) throws IOException {
-        for (int i = 0; i < carIndex; i++) {
-            out.writeObject(bookings[i]);
+        for (int i = 0; i < bookings.size(); i++) {
+            out.writeObject(bookings.get(i));
         }
     }
 
     @Override
     public void delete(UUID id) {
         CarBooking carBooking = findById(id);
-        if (carBooking != null) {
+        if (carBooking != null && carBooking.getStatus() == BookingStatus.ACTIVE)  {
             carBooking.setStatus(BookingStatus.CANCELLED);
         } else {
             return;
@@ -102,10 +97,4 @@ public class CarBookingFileDataAccessService implements CarBookingDao {
         }
     }
 
-    private void increaseCapacity() {
-        if (carIndex >= capacity) {
-            capacity *= capacityMultiplier;
-            bookings = Arrays.copyOf(bookings, capacity);
-        }
-    }
 }

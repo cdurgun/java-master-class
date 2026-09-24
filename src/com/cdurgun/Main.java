@@ -15,9 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.InputMismatchException;
-import java.util.Scanner;
-import java.util.UUID;
+import java.util.*;
 
 public class Main {
 
@@ -68,6 +66,9 @@ public class Main {
             } catch (InputMismatchException e) {
                 System.out.println("Invalid Option !!!");
                 scanner.nextLine();
+            } catch (NoSuchElementException e) {
+                System.out.println("Input closed. Exiting...");
+                option = 8;
             } catch (RuntimeException e) {
                 System.out.println("An error occurred  :" + e.getMessage());
             }
@@ -106,7 +107,7 @@ public class Main {
         }
 
         for (CarBooking carBooking : carBookingService.getAllCarBookings()) {
-            if (carBooking != null && carBooking.getUser().getId().equals(
+            if (carBooking.getUser().getId().equals(
                 UUID.fromString(userId)) && carBooking.getStatus().equals(BookingStatus.ACTIVE)) {
                 isBooked = true;
                 System.out.println(carBooking.getCar() + " is booked by " + carBooking.getUser());
@@ -122,7 +123,7 @@ public class Main {
     private static boolean displayAllBookings(CarBookingService carBookingService) throws RuntimeException {
         boolean isBooked = false;
         for (CarBooking carBooking : carBookingService.getAllCarBookings()) {
-            if (carBooking != null && carBooking.getStatus().equals(BookingStatus.ACTIVE)) {
+            if (carBooking.getStatus().equals(BookingStatus.ACTIVE)) {
                 isBooked = true;
                 System.out.println("Booking :" + carBooking);
             }
@@ -261,7 +262,7 @@ public class Main {
             return;
         }
 
-        if (carBooking != null) {
+        if (carBooking != null && carBooking.getStatus() == BookingStatus.ACTIVE) {
             carBookingService.deleteCarBooking(carBooking);
             System.out.println("Deleted:" + carBooking);
         } else {
@@ -272,7 +273,7 @@ public class Main {
     private static void displayUsers(UserService userService) {
         System.out.println("                       User List                                ");
         System.out.println("----------------------------------------------------------------");
-        User[] users = userService.getUsers();
+        List<User> users = userService.getUsers();
         for (User user : users) {
             System.out.println(user);
         }

@@ -1,40 +1,33 @@
 package com.cdurgun.carbooking;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class CarBookingArrayDataAccessService implements CarBookingDao {
-    private static CarBooking[] bookings;
-    private static int capacity = 2;
-    private static final int capacityMultiplier = 2;
-    private static int carIndex;
+    private final List<CarBooking> bookings=new ArrayList<>();
 
-    static {
-        bookings = new CarBooking[capacity];
-        carIndex = 0;
-    }
-
+    @Override
     public void save(CarBooking carBooking) {
-        if (carIndex >= capacity) {
-            capacity *= capacityMultiplier;
-            bookings = Arrays.copyOf(bookings, capacity);
-        }
-        bookings[carIndex++] = carBooking;
+        bookings.add(carBooking);
     }
 
-    public CarBooking[] findAll() {
-        return bookings;
+    @Override
+    public List<CarBooking> findAll() {
+        return List.copyOf(bookings);
     }
 
+    @Override
     public CarBooking findById(UUID bookingId) {
-        for (int i = 0; i < carIndex; i++) {
-            if (bookings[i].getId().equals(bookingId)) {
-                return bookings[i];
+        for (int i = 0; i < bookings.size(); i++) {
+            if (bookings.get(i).getId().equals(bookingId)) {
+                return bookings.get(i);
             }
         }
         return null;
     }
 
+    @Override
     public void delete(UUID id) {
         CarBooking carBooking = findById(id);
         if (carBooking != null) {

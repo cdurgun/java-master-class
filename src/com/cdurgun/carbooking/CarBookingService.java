@@ -8,6 +8,7 @@ import com.cdurgun.user.UserService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 public class CarBookingService {
@@ -23,13 +24,13 @@ public class CarBookingService {
         this.carService = carService;
     }
 
-    public CarBooking[] getAllCarBookings() {
+    public List<CarBooking> getAllCarBookings() {
         return carBookingDao.findAll();
     }
 
     public boolean isCarBooked(String regNumber) {
         for (CarBooking carBooking : this.getAllCarBookings()) {
-            if (carBooking != null && carBooking.getCar().getRegNumber().equals(regNumber)
+            if (carBooking.getCar().getRegNumber().equals(regNumber)
                 && carBooking.getStatus().equals(BookingStatus.ACTIVE)) {
                 return true;
             }

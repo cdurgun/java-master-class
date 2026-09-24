@@ -1,6 +1,7 @@
 package com.cdurgun.car;
 
 
+import java.util.List;
 import java.util.UUID;
 
 public class CarService {
@@ -11,7 +12,7 @@ public class CarService {
         this.carDao = carDao;
     }
 
-    public Car[] getAllCars() {
+    public List<Car> getAllCars() {
         return carDao.findAll();
     }
 

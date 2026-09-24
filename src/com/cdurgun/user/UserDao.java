@@ -1,11 +1,12 @@
 package com.cdurgun.user;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface UserDao {
 
     User findById(UUID userId);
 
-    User[] findAll();
+    List<User> findAll();
 
 }

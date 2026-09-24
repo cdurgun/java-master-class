@@ -1,11 +1,12 @@
 package com.cdurgun.carbooking;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface CarBookingDao {
     CarBooking findById(UUID bookingId);
 
-    CarBooking[] findAll();
+    List<CarBooking> findAll();
 
     void save(CarBooking carBooking);
 
