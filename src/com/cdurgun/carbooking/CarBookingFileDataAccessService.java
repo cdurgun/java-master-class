@@ -55,7 +55,7 @@ public class CarBookingFileDataAccessService implements CarBookingDao {
 
     @Override
     public List<CarBooking> findAll() {
-        return bookings;
+        return List.copyOf(bookings);
     }
 
     @Override
