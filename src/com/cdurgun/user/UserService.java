@@ -1,6 +1,7 @@
 package com.cdurgun.user;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class UserService {
@@ -16,10 +17,10 @@ public class UserService {
     }
 
     public boolean userExists(UUID userId) {
-        return getUserById(userId) != null;
+        return getUserById(userId).isPresent();
     }
 
-    public User getUserById(UUID userId) {
+    public Optional<User> getUserById(UUID userId) {
         return userDao.findById(userId);
     }
 }

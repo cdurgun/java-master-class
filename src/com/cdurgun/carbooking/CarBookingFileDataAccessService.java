@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class CarBookingFileDataAccessService implements CarBookingDao {
@@ -44,13 +45,10 @@ public class CarBookingFileDataAccessService implements CarBookingDao {
     }
 
     @Override
-    public CarBooking findById(UUID bookingId) {
-        for (int i = 0; i < bookings.size(); i++) {
-            if (bookings.get(i).getId().equals(bookingId)) {
-                return bookings.get(i);
-            }
-        }
-        return null;
+    public Optional<CarBooking> findById(UUID bookingId) {
+        return bookings.stream()
+            .filter(booking -> booking.getId().equals(bookingId))
+            .findFirst();
     }
 
     @Override
@@ -72,28 +70,27 @@ public class CarBookingFileDataAccessService implements CarBookingDao {
     }
 
     private void writeBookings(ObjectOutputStream out) throws IOException {
-        for (int i = 0; i < bookings.size(); i++) {
-            out.writeObject(bookings.get(i));
+        for (CarBooking booking : bookings) {
+            out.writeObject(booking);
         }
     }
 
     @Override
     public void delete(UUID id) {
-        CarBooking carBooking = findById(id);
-        if (carBooking != null && carBooking.getStatus() == BookingStatus.ACTIVE)  {
-            carBooking.setStatus(BookingStatus.CANCELLED);
-        } else {
-            return;
-        }
+        Optional<CarBooking> carBooking = findById(id)
+            .filter(CarBooking::isActive);
 
-        try (ObjectOutputStream out =
-                 new ObjectOutputStream(new FileOutputStream(filePath))) {
-            writeBookings(out);
-        } catch (IOException e) {
-            carBooking.setStatus(BookingStatus.ACTIVE);
-            throw new RuntimeException(
-                "Could not cancel car booking with ID: " + id, e
-            );
+        if (carBooking.isPresent()) {
+            carBooking.get().setStatus(BookingStatus.CANCELLED);
+            try (ObjectOutputStream out =
+                     new ObjectOutputStream(new FileOutputStream(filePath))) {
+                writeBookings(out);
+            } catch (IOException e) {
+                carBooking.get().setStatus(BookingStatus.ACTIVE);
+                throw new RuntimeException(
+                    "Could not cancel car booking with ID: " + id, e
+                );
+            }
         }
     }
 
