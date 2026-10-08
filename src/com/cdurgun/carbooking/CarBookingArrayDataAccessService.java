@@ -2,10 +2,11 @@ package com.cdurgun.carbooking;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class CarBookingArrayDataAccessService implements CarBookingDao {
-    private final List<CarBooking> bookings=new ArrayList<>();
+    private final List<CarBooking> bookings = new ArrayList<>();
 
     @Override
     public void save(CarBooking carBooking) {
@@ -18,20 +19,15 @@ public class CarBookingArrayDataAccessService implements CarBookingDao {
     }
 
     @Override
-    public CarBooking findById(UUID bookingId) {
-        for (int i = 0; i < bookings.size(); i++) {
-            if (bookings.get(i).getId().equals(bookingId)) {
-                return bookings.get(i);
-            }
-        }
-        return null;
+    public Optional<CarBooking> findById(UUID bookingId) {
+        return bookings.stream()
+            .filter(cb -> cb.getId().equals(bookingId))
+            .findFirst();
     }
 
     @Override
     public void delete(UUID id) {
-        CarBooking carBooking = findById(id);
-        if (carBooking != null) {
-            carBooking.setStatus(BookingStatus.CANCELLED);
-        }
+        Optional<CarBooking> carBooking = findById(id);
+        carBooking.ifPresent(booking -> booking.setStatus(BookingStatus.CANCELLED));
     }
 }

@@ -67,6 +67,10 @@ public class CarBooking implements Serializable {
         this.status = status;
     }
 
+    public boolean isActive() {
+        return status == BookingStatus.ACTIVE;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof CarBooking that)) return false;

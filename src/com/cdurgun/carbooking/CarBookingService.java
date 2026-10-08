@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class CarBookingService {
@@ -29,28 +30,28 @@ public class CarBookingService {
     }
 
     public boolean isCarBooked(String regNumber) {
-        for (CarBooking carBooking : this.getAllCarBookings()) {
-            if (carBooking.getCar().getRegNumber().equals(regNumber)
-                && carBooking.getStatus().equals(BookingStatus.ACTIVE)) {
-                return true;
-            }
-        }
-        return false;
+        return this.getAllCarBookings().stream()
+            .anyMatch(carBooking -> carBooking.getCar().getRegNumber().equals(regNumber)
+                && carBooking.isActive());
     }
 
-    public CarBooking getCarBookingById(UUID bookingId) {
+    public Optional<CarBooking> getCarBookingById(UUID bookingId) {
         return carBookingDao.findById(bookingId);
     }
 
-    public CarBooking bookCar(UUID userId, UUID carId, LocalDate startDate, LocalDate endDate)  {
-        Car car = carService.getCarByID(carId);
-        User user = userService.getUserById(userId);
+    public CarBooking bookCar(UUID userId, UUID carId, LocalDate startDate, LocalDate endDate) {
+        Car car = carService.getCarByID(carId)
+            .orElseThrow(() -> new IllegalArgumentException("Car not found: " + carId));
+        User user = userService.getUserById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
         long numberOfDays = ChronoUnit.DAYS.between(startDate, endDate);
         if (startDate.isEqual(endDate)) {
             numberOfDays = 1;
         }
 
-        BigDecimal rentPrice = car.getRentalPricePerDay().multiply(BigDecimal.valueOf(numberOfDays));
+        BigDecimal rentPrice = car.getRentalPricePerDay()
+            .multiply(BigDecimal.valueOf(numberOfDays));
         CarBooking carBooking = new CarBooking(UUID.randomUUID(),
             user, car, startDate,
             endDate, rentPrice, BookingStatus.ACTIVE, LocalDate.now());
@@ -59,7 +60,7 @@ public class CarBookingService {
         return carBooking;
     }
 
-    public void deleteCarBooking(CarBooking carBooking)  {
+    public void deleteCarBooking(CarBooking carBooking) {
         carBookingDao.delete(carBooking.getId());
     }
 
