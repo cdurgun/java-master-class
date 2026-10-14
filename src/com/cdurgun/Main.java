@@ -4,7 +4,7 @@ import com.cdurgun.car.Car;
 import com.cdurgun.car.CarArrayDataAccessService;
 import com.cdurgun.car.CarDao;
 import com.cdurgun.car.CarService;
-import com.cdurgun.carbooking.*;
+import com.cdurgun.booking.*;
 import com.cdurgun.user.UserArrayDataAccessService;
 import com.cdurgun.user.UserDao;
 import com.cdurgun.user.UserService;
@@ -15,15 +15,10 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
 
-    private static final String DEFAULT_FILE_PATH = "bookings.dat";
-
-    // Command-line arguments:
-    // - "delete" deletes the data file at the start of the session.
-    // - Any other argument is treated as the file path.
-    // - If no file path is provided, the default file path is used.
     static void main(String[] args) {
         UserDao userDao = new UserArrayDataAccessService();
         UserService userService = new UserService(userDao);
@@ -31,18 +26,10 @@ public class Main {
         CarService carService = new CarService(carDao);
         //CarBookingDao carBookingDao = new CarBookingArrayDataAccessService();
         CarBookingDao carBookingDao;
-        String filePath = DEFAULT_FILE_PATH;
-        boolean deleteFile = false;
-        for (String arg : args) {
-            if (arg.equalsIgnoreCase("delete")) {
-                deleteFile = true;
-            } else {
-                filePath = arg;
-            }
-        }
-
         try {
-            if (deleteFile) {
+            String filePath = "bookings.dat";
+            // Depending on the argument, the file can be deleted at the start of each session.
+            if (args.length > 0 && args[0].equalsIgnoreCase("delete")) {
                 Files.deleteIfExists(Path.of(filePath));
             }
             carBookingDao = new CarBookingFileDataAccessService(filePath);
@@ -154,9 +141,15 @@ public class Main {
     }
 
     private static boolean displayAllAvailableCars(CarService carService, CarBookingService carBookingService, boolean isElectricCar) throws RuntimeException {
+
+        Set<String> bookedRegNumbers = carBookingService.getAllCarBookings().stream()
+            .filter(CarBooking::isActive)
+            .map(cb -> cb.getCar().getRegNumber())
+            .collect(Collectors.toSet());
+
         List<Car> carList = carService.getAllCars().stream()
             .filter(c -> !isElectricCar || c.isElectric())
-            .filter(c -> !carBookingService.isCarBooked(c.getRegNumber()))
+            .filter(c -> !bookedRegNumbers.contains(c.getRegNumber()))
             .toList();
 
         System.out.println(
@@ -274,18 +267,18 @@ public class Main {
             return;
         }
 
-        carBooking.filter(CarBooking::isActive)
-            .ifPresentOrElse(cb -> {
-                carBookingService.deleteCarBooking(cb);
-                System.out.println("Deleted:" + cb);
-            }, () -> System.out.println("Car booking not found !!!"));
+        carBooking.ifPresentOrElse(cb -> {
+            carBookingService.deleteCarBooking(cb);
+            System.out.println("Deleted:" + cb);
+        }, () -> System.out.println("Car booking not found !!!"));
 
     }
 
     private static void displayUsers(UserService userService) {
         System.out.println("                       User List                                ");
         System.out.println("----------------------------------------------------------------");
-        userService.getUsers().forEach(System.out::println);
+        userService.getUsers()
+            .forEach(System.out::println);
         System.out.println("----------------------------------------------------------------");
     }
 }

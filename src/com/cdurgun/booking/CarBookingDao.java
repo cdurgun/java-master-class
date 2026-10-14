@@ -1,4 +1,4 @@
-package com.cdurgun.carbooking;
+package com.cdurgun.booking;
 
 import java.util.List;
 import java.util.Optional;

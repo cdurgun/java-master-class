@@ -1,4 +1,4 @@
-package com.cdurgun.carbooking;
+package com.cdurgun.booking;
 
 import com.cdurgun.car.Car;
 import com.cdurgun.user.User;

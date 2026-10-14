@@ -1,4 +1,4 @@
-package com.cdurgun.carbooking;
+package com.cdurgun.booking;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +27,7 @@ public class CarBookingArrayDataAccessService implements CarBookingDao {
 
     @Override
     public void delete(UUID id) {
-        Optional<CarBooking> carBooking = findById(id);
+        Optional<CarBooking> carBooking = findById(id).filter(CarBooking::isActive);
         carBooking.ifPresent(booking -> booking.setStatus(BookingStatus.CANCELLED));
     }
 }
