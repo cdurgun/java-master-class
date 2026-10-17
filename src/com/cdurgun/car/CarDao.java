@@ -1,14 +1,15 @@
 package com.cdurgun.car;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface CarDao {
 
     List<Car> findAll();
 
-    Car findById(UUID carId);
+    Optional<Car> findById(UUID carId);
 
-    Car findByRegNumber(String regNumber);
+    Optional<Car> findByRegNumber(String regNumber);
 
 }

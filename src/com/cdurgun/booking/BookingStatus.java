@@ -1,4 +1,4 @@
-package com.cdurgun.carbooking;
+package com.cdurgun.booking;
 
 public enum BookingStatus {
     ACTIVE,

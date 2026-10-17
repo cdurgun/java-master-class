@@ -4,8 +4,7 @@ import com.cdurgun.car.Car;
 import com.cdurgun.car.CarArrayDataAccessService;
 import com.cdurgun.car.CarDao;
 import com.cdurgun.car.CarService;
-import com.cdurgun.carbooking.*;
-import com.cdurgun.user.User;
+import com.cdurgun.booking.*;
 import com.cdurgun.user.UserArrayDataAccessService;
 import com.cdurgun.user.UserDao;
 import com.cdurgun.user.UserService;
@@ -16,11 +15,11 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
 
     static void main(String[] args) {
-
         UserDao userDao = new UserArrayDataAccessService();
         UserService userService = new UserService(userDao);
         CarDao carDao = new CarArrayDataAccessService();
@@ -35,11 +34,13 @@ public class Main {
             }
             carBookingDao = new CarBookingFileDataAccessService(filePath);
         } catch (RuntimeException | IOException e) {
-            System.out.println("An error occurred while initializing the booking data:" + e.getMessage());
+            System.out.println(
+                "An error occurred while initializing the booking data:" + e.getMessage());
             return;
         }
 
-        CarBookingService carBookingService = new CarBookingService(carBookingDao, userService, carService);
+        CarBookingService carBookingService = new CarBookingService(carBookingDao, userService,
+            carService);
         processMenuOption(userService, carService, carBookingService);
     }
 
@@ -53,7 +54,8 @@ public class Main {
                 scanner.nextLine();
 
                 switch (option) {
-                    case 1 -> displayCarBookingAndSave(userService, carService, carBookingService, scanner);
+                    case 1 -> displayCarBookingAndSave(userService, carService, carBookingService,
+                        scanner);
                     case 2 -> deleteCarBooking(carBookingService, scanner);
                     case 3 -> displayAllUserBookedCars(userService, carBookingService, scanner);
                     case 4 -> displayAllBookings(carBookingService);
@@ -92,12 +94,13 @@ public class Main {
     }
 
     private static void displayAllUserBookedCars(UserService userService, CarBookingService carBookingService, Scanner scanner) throws RuntimeException {
-        boolean isBooked = false;
         displayUsers(userService);
         System.out.print("Enter User Id : ");
         String userId = scanner.nextLine();
+        UUID userUUID;
         try {
-            if (!userService.userExists(UUID.fromString(userId))) {
+            userUUID = UUID.fromString(userId);
+            if (!userService.userExists(userUUID)) {
                 System.out.println("User not found");
                 return;
             }
@@ -106,59 +109,63 @@ public class Main {
             return;
         }
 
-        for (CarBooking carBooking : carBookingService.getAllCarBookings()) {
-            if (carBooking.getUser().getId().equals(
-                UUID.fromString(userId)) && carBooking.getStatus().equals(BookingStatus.ACTIVE)) {
-                isBooked = true;
-                System.out.println(carBooking.getCar() + " is booked by " + carBooking.getUser());
-            }
-        }
-        if (!isBooked) {
+        List<CarBooking> carBookings = carBookingService.getAllCarBookings().stream()
+            .filter(cb -> cb.getUser().getId().equals(
+                userUUID) && cb.isActive())
+            .toList();
+
+        if (carBookings.isEmpty()) {
             System.out.println("No bookings");
+        } else {
+            carBookings.forEach(carBooking ->
+                System.out.println(
+                    carBooking.getCar() + " is booked by " + carBooking.getUser()));
         }
         System.out.println();
-
     }
 
     private static boolean displayAllBookings(CarBookingService carBookingService) throws RuntimeException {
-        boolean isBooked = false;
-        for (CarBooking carBooking : carBookingService.getAllCarBookings()) {
-            if (carBooking.getStatus().equals(BookingStatus.ACTIVE)) {
-                isBooked = true;
-                System.out.println("Booking :" + carBooking);
-            }
-        }
-        if (!isBooked) {
+
+        List<CarBooking> carBookings = carBookingService.getAllCarBookings().stream()
+            .filter(CarBooking::isActive)
+            .toList();
+
+        if (carBookings.isEmpty()) {
             System.out.println("No bookings");
+        } else {
+            carBookings.forEach(cb -> System.out.println("Booking :" + cb));
         }
+
         System.out.println();
-        return isBooked;
+        return !carBookings.isEmpty();
     }
 
     private static boolean displayAllAvailableCars(CarService carService, CarBookingService carBookingService, boolean isElectricCar) throws RuntimeException {
-        boolean existAvailableCar = false;
-        System.out.println("                               Car List                                           ");
-        System.out.println("----------------------------------------------------------------------------------");
-        for (Car car : carService.getAllCars()) {
-            if (isElectricCar) {
-                if (!carBookingService.isCarBooked(car.getRegNumber()) && car.isElectric()) {
-                    existAvailableCar = true;
-                    System.out.println(car);
-                }
-            } else {
-                if (!carBookingService.isCarBooked(car.getRegNumber())) {
-                    existAvailableCar = true;
-                    System.out.println(car);
-                }
-            }
-        }
-        if (!existAvailableCar) {
-            System.out.println("No cars available for booking !!!");
-        }
-        System.out.println("----------------------------------------------------------------------------------");
-        return existAvailableCar;
-    }
 
+        Set<String> bookedRegNumbers = carBookingService.getAllCarBookings().stream()
+            .filter(CarBooking::isActive)
+            .map(cb -> cb.getCar().getRegNumber())
+            .collect(Collectors.toSet());
+
+        List<Car> carList = carService.getAllCars().stream()
+            .filter(c -> !isElectricCar || c.isElectric())
+            .filter(c -> !bookedRegNumbers.contains(c.getRegNumber()))
+            .toList();
+
+        System.out.println(
+            "                               Car List                                           ");
+        System.out.println(
+            "----------------------------------------------------------------------------------");
+        if (carList.isEmpty()) {
+            System.out.println("No cars available for booking !!!");
+        } else {
+            carList.forEach(System.out::println);
+        }
+        System.out.println(
+            "----------------------------------------------------------------------------------");
+
+        return !carList.isEmpty();
+    }
 
     private static void displayCarBookingAndSave(UserService userService, CarService carService, CarBookingService carBookingService, Scanner scanner) throws RuntimeException {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
@@ -170,8 +177,8 @@ public class Main {
             }
             System.out.println("Select car reg number ");
             String regNumber = scanner.nextLine();
-            Car car = carService.getCarByRegNumber(regNumber);
-            if (car == null) {
+            Optional<Car> car = carService.getCarByRegNumber(regNumber);
+            if (car.isEmpty()) {
                 System.out.println("Car not found");
                 break;
             }
@@ -181,7 +188,7 @@ public class Main {
                 break;
             }
 
-            UUID carId = car.getId();
+            UUID carId = car.get().getId();
 
             displayUsers(userService);
             System.out.println("Select user id ");
@@ -236,13 +243,11 @@ public class Main {
             if (saveBooking.equalsIgnoreCase("Y")) {
                 CarBooking carBooking;
                 try {
-                    carBooking = carBookingService.bookCar(UUID.fromString(userId), carId, startDate, endDate);
+                    carBooking = carBookingService.bookCar(UUID.fromString(userId), carId,
+                        startDate, endDate);
+                    System.out.println("Car booked successfully :" + carBooking);
                 } catch (RuntimeException e) {
                     System.out.println("Car booking failed :" + e.getMessage());
-                    carBooking = null;
-                }
-                if (carBooking != null) {
-                    System.out.println("Car booked successfully :" + carBooking);
                 }
             }
             break;
@@ -250,11 +255,11 @@ public class Main {
     }
 
     private static void deleteCarBooking(CarBookingService carBookingService, Scanner scanner) throws RuntimeException {
-        boolean existBookings = displayAllBookings(carBookingService);
-        if (!existBookings) return;
+        boolean bookingsExist = displayAllBookings(carBookingService);
+        if (!bookingsExist) return;
         System.out.println("Enter booking id");
         String bookingId = scanner.nextLine();
-        CarBooking carBooking;
+        Optional<CarBooking> carBooking;
         try {
             carBooking = carBookingService.getCarBookingById(UUID.fromString(bookingId));
         } catch (IllegalArgumentException e) {
@@ -262,21 +267,18 @@ public class Main {
             return;
         }
 
-        if (carBooking != null && carBooking.getStatus() == BookingStatus.ACTIVE) {
-            carBookingService.deleteCarBooking(carBooking);
-            System.out.println("Deleted:" + carBooking);
-        } else {
-            System.out.println("Car booking not found !!!");
-        }
+        carBooking.ifPresentOrElse(cb -> {
+            carBookingService.deleteCarBooking(cb);
+            System.out.println("Deleted:" + cb);
+        }, () -> System.out.println("Car booking not found !!!"));
+
     }
 
     private static void displayUsers(UserService userService) {
         System.out.println("                       User List                                ");
         System.out.println("----------------------------------------------------------------");
-        List<User> users = userService.getUsers();
-        for (User user : users) {
-            System.out.println(user);
-        }
+        userService.getUsers()
+            .forEach(System.out::println);
         System.out.println("----------------------------------------------------------------");
     }
 }

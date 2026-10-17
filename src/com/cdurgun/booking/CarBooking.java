@@ -1,4 +1,4 @@
-package com.cdurgun.carbooking;
+package com.cdurgun.booking;
 
 import com.cdurgun.car.Car;
 import com.cdurgun.user.User;
@@ -65,6 +65,10 @@ public class CarBooking implements Serializable {
 
     public void setStatus(BookingStatus status) {
         this.status = status;
+    }
+
+    public boolean isActive() {
+        return status == BookingStatus.ACTIVE;
     }
 
     @Override

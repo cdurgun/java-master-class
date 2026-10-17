@@ -1,6 +1,7 @@
 package com.cdurgun.user;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class UserArrayDataAccessService implements UserDao {
@@ -19,11 +20,7 @@ public class UserArrayDataAccessService implements UserDao {
     }
 
     @Override
-    public User findById(UUID userId) {
-        for (User user : users) {
-            if (user.getId().equals(userId))
-                return user;
-        }
-        return null;
+    public Optional<User> findById(UUID userId) {
+        return users.stream().filter(user -> user.getId().equals(userId)).findFirst();
     }
 }

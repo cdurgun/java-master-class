@@ -2,6 +2,7 @@ package com.cdurgun.car;
 
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class CarService {
@@ -16,11 +17,11 @@ public class CarService {
         return carDao.findAll();
     }
 
-    public Car getCarByID(UUID carId) {
+    public Optional<Car> getCarByID(UUID carId) {
         return carDao.findById(carId);
     }
 
-    public Car getCarByRegNumber(String regNumber) {
+    public Optional<Car> getCarByRegNumber(String regNumber) {
         return carDao.findByRegNumber(regNumber);
     }
 
